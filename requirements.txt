@@ -1,0 +1,5 @@
+babelfish==0.5.5
+guessit==3.1.0
+python-dateutil==2.8.1
+rebulk==2.0.0
+six==1.13.0
