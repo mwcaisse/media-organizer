@@ -21,11 +21,15 @@ VIDEO_FILE_EXTENSIONS = {
 }
 
 
+#Progress bar constants
+PB_FULL_BLOCK = "█"
+PB_INCOMPLETE_BLOCK_GRAD = ["░", "▒", "▓"]
+PB_SEPARATOR = " "
+PB_EPSILON = 1e-6
+PB_MAX_PERC_WIDGET = "[100.00%]"
+
+
 def progress_percentage(perc, width=None):
-
-    FULL_BLOCK = "█"
-    INCOMPLETE_BLOCK_GRAD = ["░", "▒", "▓"]
-
     assert(isinstance(perc, float))
     assert(0. <= perc <= 100.)
 
@@ -33,34 +37,29 @@ def progress_percentage(perc, width=None):
         try:
             width = os.get_terminal_size().columns
         except OSError as e:
-            width=120 # default it to 120 if this happens
+            width = 120  # default it to 120 if this happens
 
-    max_perc_widget = "[100.00%]"
-    separator = " "
-    blocks_widget_width = width - len(separator) - len(max_perc_widget)
+    blocks_widget_width = width - len(PB_SEPARATOR) - len(PB_MAX_PERC_WIDGET)
     assert(blocks_widget_width >= 10)
     perc_per_block = 100.0/blocks_widget_width
 
-    # sensitivity of rendering a gradient block
-    epsilon = 1e-6
-
-    full_blocks = int((perc + epsilon) / perc_per_block)
+    full_blocks = int((perc + PB_EPSILON) / perc_per_block)
     empty_blocks = blocks_widget_width - full_blocks
 
-    blocks_widget = ([FULL_BLOCK] * full_blocks)
-    blocks_widget.extend([INCOMPLETE_BLOCK_GRAD[0]] * empty_blocks)
+    blocks_widget = ([PB_FULL_BLOCK] * full_blocks)
+    blocks_widget.extend([PB_INCOMPLETE_BLOCK_GRAD[0]] * empty_blocks)
 
     remainder = perc - full_blocks * perc_per_block
 
-    if remainder > epsilon:
-        grad_index = int((len(INCOMPLETE_BLOCK_GRAD) * remainder) / perc_per_block)
-        blocks_widget[full_blocks] = INCOMPLETE_BLOCK_GRAD[grad_index]
+    if remainder > PB_EPSILON:
+        grad_index = int((len(PB_INCOMPLETE_BLOCK_GRAD) * remainder) / perc_per_block)
+        blocks_widget[full_blocks] = PB_INCOMPLETE_BLOCK_GRAD[grad_index]
 
     str_perc = "%.2f" % perc
-    perc_widget = "[%s%%]" % str_perc.ljust(len(max_perc_widget) - 3)
+    perc_widget = "[%s%%]" % str_perc.ljust(len(PB_MAX_PERC_WIDGET) - 3)
 
     # create the progress bar
-    progress_bar = "%s%s%s" % ("".join(blocks_widget), separator, perc_widget)
+    progress_bar = "%s%s%s" % ("".join(blocks_widget), PB_SEPARATOR, perc_widget)
     return "".join(progress_bar)
 
 
@@ -102,6 +101,24 @@ def is_video_file(filename):
 SKIPPED = []
 
 
+def copy_video_file(src_file, dest_dir, dest_filename, type="TV Show"):
+    dest_file = os.path.join(dest_dir, dest_filename)
+
+    # If the file already exists, skip copying it
+    if os.path.exists(dest_file):
+        SKIPPED.append(src_file)
+        print("{file} ALREADY EXISTS! SKIPPING!".format(file=dest_file))
+        return
+
+    # If the destination directory doesn't already exist, create it
+    if not os.path.exists(dest_dir):
+        os.makedirs(dest_dir)
+
+    print("Copying {type}: {filename}!".format(type=type, filename=dest_filename))
+    copy_file_with_progress(src_file, dest_file)
+    os.remove(src_file)
+
+
 def organize_video(directory, filename):
     guess = guessit(filename)
 
@@ -117,37 +134,11 @@ def organize_video(directory, filename):
         # create the destination path TV_DIR/Show Name/Season ##/filename
         season_dir = "Season {num}".format(num=str(guess["season"]).zfill(2))
         dest_dir = os.path.join(TV_DIR, str(guess["title"]).title(), season_dir)
-        dest_file = os.path.join(dest_dir, filename)
 
-        # If the file already exists, skip copying it
-        if os.path.exists(dest_file):
-            SKIPPED.append(src_file)
-            print("{file} ALREADY EXISTS! SKIPPING!".format(file=dest_file))
-            return
-
-        if not os.path.exists(dest_dir):
-            os.makedirs(dest_dir)
-
-        print("Copying TV Show: {filename}!".format(filename=filename))
-        copy_file_with_progress(src_file, dest_file)
-        os.remove(src_file)
+        copy_video_file(src_file, dest_dir, filename)
 
     elif guess["type"] == "movie":
-        if not os.path.exists(MOVIES_DIR):
-            os.makedirs(MOVIES_DIR)
-
-        dest_file = os.path.join(MOVIES_DIR, filename)
-        # If the file already exists, skip copying it
-        if os.path.exists(dest_file):
-            SKIPPED.append(src_file)
-            print("{file} ALREADY EXISTS! SKIPPING!".format(file=dest_file))
-            return
-
-        # copy to the movies dir
-        #TODO: Might want to add a check to see if the file contains S01E01 format first, incase mistaken movie
-        print("Copying Movie: {filename}!".format(filename=filename))
-        copy_file_with_progress(src_file, dest_file)
-        os.remove(src_file)
+        copy_video_file(src_file, MOVIES_DIR, filename)
     else:
         print("Unknown video file! {directory}/{filename}",
               directory=directory,
