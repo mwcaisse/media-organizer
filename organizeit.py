@@ -138,7 +138,7 @@ def organize_video(directory, filename):
         copy_video_file(src_file, dest_dir, filename)
 
     elif guess["type"] == "movie":
-        copy_video_file(src_file, MOVIES_DIR, filename)
+        copy_video_file(src_file, MOVIES_DIR, filename, "Movie")
     else:
         print("Unknown video file! {directory}/{filename}",
               directory=directory,
