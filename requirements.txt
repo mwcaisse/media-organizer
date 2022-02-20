@@ -1,5 +1,10 @@
-babelfish==0.5.5
-guessit==3.1.0
-python-dateutil==2.8.1
-rebulk==2.0.0
-six==1.13.0
+babelfish==0.6.0
+certifi==2021.10.8
+charset-normalizer==2.0.12
+guessit==3.4.3
+idna==3.3
+python-dateutil==2.8.2
+rebulk==3.1.0
+requests==2.27.1
+six==1.16.0
+urllib3==1.26.8

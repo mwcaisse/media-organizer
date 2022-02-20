@@ -3,3 +3,7 @@ venv/
 
 # Ignore IDEA configuration
 .idea/
+
+__pycache__/
+
+.movie_requests_cache.pkl
