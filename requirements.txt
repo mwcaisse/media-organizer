@@ -1,5 +1,5 @@
 babelfish==0.6.0
-certifi==2021.10.8
+certifi==2022.12.7
 charset-normalizer==2.0.12
 guessit==3.4.3
 idna==3.3
